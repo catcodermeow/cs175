@@ -1,0 +1,531 @@
+\documentclass[letterpaper, 11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\newcommand{\ba}{\begin{eqnarray*}}
+\newcommand{\ea}{\end{eqnarray*}}
+\newcommand{\bb}[1]{{\bf #1}}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{CS175 Assignment 5\\ Projection and Texture Mapping}
+\date{}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+
+This is a written assignment that improves your understanding of
+projection and texture mapping.
+If you are confused about a question, please ask.
+
+Explain your reasoning.
+\begin{enumerate}
+
+\item Ex. 10.1 from the book.
+{\bf Notes}: In (A) the inner square is staying the same size.
+In (B) the inner square is growing at the same rate as the outer square.
+In (C) the inner square is growing faster than  the outer square.
+
+% Problem (copied from textbook): Suppose we take a picture of an ice cube. Let us draw the projection of the front face with a solid outline and the rear face with a dotted outline. Suppose three images are taken using fields of view of 40, 30, and 20 degrees, respectively. All other camera parameters remain fixed. Which of the following three sequences is plausible:
+
+\fbox{%
+  \begin{minipage}{6in}
+Changing the FOV of the camera is functionally equivalent to scaling the sampled image and then cropping to the canonical square. Therefore, the correct answer is (B), which has the inner square growing at the same rate as the outer square.
+   \end{minipage}%
+}
+
+\item{} [{\bf Hint}: For Problem 2, 3, and 4 below, it will be easier if
+  you consider a simplified projection matrix of the form
+$$P:=\left[
+\begin{array}{cccc}
+  1 & 0 & 0 & 0 \\
+  0 & 1 & 0 & 0 \\
+  0 & 0 & 0 & 1 \\
+  0 & 0 & -1 & 0
+\end{array}
+\right]$$ which should give you the same result. Also it may be helpful
+to write down some test eye coordinates and see how they map.
+In these 3 questions, the modelview matrix, the viewport matrix,
+the window size, do not change. You do not any info from the cited book equation numbers.]
+
+
+When these questions ask ``what is the effect'', you should
+first describe the effect on the $(x_w,y_w)$
+window coordinates or on the $(x_n,y_n)$ normalized device coordinates,
+of the three vertices
+of a triangle. That is, What is
+mathematical relationship between the new
+coordinates with the altered matrix,
+say $(x'_w,y'_w)$
+as compared to the original coordinates
+resulting from the original matrix,
+say $(x_w,y_w)$.
+
+You should then describe in simple english if and how
+the image on the screen would change in our openGL rendering
+API, due to this matrix swap.
+
+You should assume that the matrix swap is being used for all
+of the triangles in the scene.
+
+\newpage
+
+ Ex. 11.3 from the book.
+
+\fbox{%
+  \begin{minipage}{6in}
+  Normally, we'd calculate the normalized device coordinates from the eye coordinates of a point like:
+  \[ 
+  \left[ \begin{array}{c}
+       x_n w_n \\
+       y_n w_n \\
+       z_n w_n \\
+       w_n
+  \end{array} \right] 
+  = P 
+  \left[ \begin{array}{c}
+       x_e \\
+       y_e \\
+       z_e \\
+       1
+  \end{array} \right] 
+  \]
+  When we replace $P$ with $PS$, we can choose to put the parenthesis around $S$ and the eye coordinates of a point. When we think about it like this, we can imagine that $S$ is affecting the eye coordinates in world space, and then they are being projected with the normal projection matrix $P$. When we multiply the eye coordinates by $S$, we get
+  \[ 
+  \left[ \begin{array}{c}
+       x_n w_n \\
+       y_n w_n \\
+       z_n w_n \\
+       w_n
+  \end{array} \right] 
+  = P \left( S
+  \left[ \begin{array}{c}
+       x_e \\
+       y_e \\
+       z_e \\
+       1
+  \end{array} \right] \right)
+  = P \left[ \begin{array}{c}
+       3x_e \\
+       3y_e \\
+       3z_e \\
+       3
+  \end{array} \right]
+  \]
+This lets us think about $S$ as a scaling matrix that scales the $x,y,z$ all by 3 and also scales the $w$ by 3. Since we divide by $w_n$ when we calculate the normalized device coordinates, scaling all four values in the eye coordinates ends up ``cancelling out''; the larger scale in the $z$ coordinate divides out the larger scale in the other coordinates. We can also show this mathematically by using $P$ as defined above.
+
+\[= \left[
+\begin{array}{cccc}
+  1 & 0 & 0 & 0 \\
+  0 & 1 & 0 & 0 \\
+  0 & 0 & 0 & 1 \\
+  0 & 0 & -1 & 0
+\end{array}
+\right]
+\left[ \begin{array}{c}
+   3x_e \\
+   3y_e \\
+   3z_e \\
+   3
+\end{array} \right]
+= \left[ \begin{array}{c}
+       3x_e \\
+       3y_e \\
+       3 \\
+       -3z_e
+  \end{array} \right]
+\]
+which means that
+\[ 
+  \left[ \begin{array}{c}
+       x_n w_n \\
+       y_n w_n \\
+       z_n w_n \\
+       w_n
+  \end{array} \right] 
+  =
+  \left[ \begin{array}{c}
+       -x_e/z_e \\
+       -y_e/z_e \\
+       -1/z_e \\
+       -3z_e
+  \end{array} \right] 
+\]
+The $x_n$ and $y_n$ match the basic pinhole camera model, and the $z_n$ z-buffer value matches for depth comparisons. The final value for $w_n$ is different, but we don't use it anymore once we do the divide, so that doesn't matter.
+
+All together, we see that replacing $P$ with $PS$ creates no visible change in the rendered image.
+
+  
+  
+  \end{minipage}
+}
+
+\newpage
+
+\item Ex. 11.2 from the book.
+
+\fbox{%
+\begin{minipage}{6in}
+    Abbreviating very similar logic as in the prior question, we'll replace $P$ with $PQ$ and see the effects on the eye coordinates and the normalized device coordinates.
+
+    \[
+    \left[ \begin{array}{c}
+        x_n w_n \\
+        y_n w_n \\
+        z_n w_n \\
+        w_n
+    \end{array}\right]
+    = P
+    \left(
+    \left[
+    \begin{array}{cccc}
+      3 & 0 & 0 & 0 \\
+      0 & 3 & 0 & 0 \\
+      0 & 0 & 3 & 0 \\
+      0 & 0 & 0 & 1
+    \end{array}
+    \right]
+    \left[
+    \begin{array}{c}
+    x_e \\ y_e \\ z_e \\ 1
+    \end{array}
+    \right]
+    \right)
+    = P
+    \left[
+    \begin{array}{c}
+    3x_e \\ 3y_e \\ 3z_e \\ 1
+    \end{array}
+    \right]
+    \]
+    We can think of this as a scale on the eye coordinates that blows up everything by 3. It's an equal scale on all of the $x,y,z$ axes, and since the 4th value is still a 1, it makes sense to conceptualize this as a point that has been transformed.
+
+    Next we'll multiply by $P$:
+    \[
+    = \left[
+    \begin{array}{cccc}
+      1 & 0 & 0 & 0 \\
+      0 & 1 & 0 & 0 \\
+      0 & 0 & 0 & 1 \\
+      0 & 0 & -1 & 0
+    \end{array}
+    \right]
+    \left[
+    \begin{array}{c}
+    3x_e \\ 3y_e \\ 3z_e \\ 1
+    \end{array}
+    \right]
+    = 
+    \left[
+    \begin{array}{c}
+    3x_e \\ 3y_e \\ 1 \\ -3z_e
+    \end{array}
+    \right]
+    \]
+which means that the normalized device coordinates are
+    \[
+    \left[ \begin{array}{c}
+        x_n \\ y_n \\ z_n \\ w_n
+    \end{array}\right]
+    =
+    \left[ \begin{array}{c} 
+        -x_e / z_e \\ 
+        -y_e / z_e \\
+        -1 / 3z_e \\
+        -3z_e
+    \end{array}\right]
+    \]
+
+The $x_n$ and $y_n$ match the basic pinhole camera model so objects will show up on the same location on the screen. However, the $z_n$ value is scaled by $-1/3$ now which means that we see everything 1/3 of the size.
+
+All together, we see that replacing $P$ with $PQ$  results in zooming out by a factor of 3.
+\end{minipage}
+}
+
+\newpage
+\item Ex. 11.4 from the book.
+
+\fbox{
+\begin{minipage}{6in}
+    Now we're replacing $P$ with $QP$. Time to matrix multiply.
+    \[
+    QP \left[
+    \begin{array}{c}
+    x_e \\ y_e \\ z_e \\ 1
+    \end{array}
+    \right] = \left[ \begin{array}{cccc}
+      3 & 0 & 0 & 0 \\
+      0 & 3 & 0 & 0 \\
+      0 & 0 & 0 & 3 \\
+      0 & 0 & -1 & 0
+    \end{array}\right]
+    \left[
+    \begin{array}{c}
+    x_e \\ y_e \\ z_e \\ 1
+    \end{array}
+    \right]
+    =
+    \left[
+    \begin{array}{c}
+    3x_e \\ 3y_e \\ 3 \\ -z_e
+    \end{array}
+    \right]
+    \]
+    which means that the normalized device coordinates are
+    \[
+    \left[ \begin{array}{c}
+        x_n \\ y_n \\ z_n \\ w_n
+    \end{array}\right]
+    =
+    \left[ \begin{array}{c} 
+        -3x_e / z_e \\ 
+        -3y_e / z_e \\
+        -3 / z_e \\
+        -z_e
+    \end{array}\right]
+    \]
+    Uh oh, these don't match the pinhole camera model. The $x_n$ and $y_n$ are off by a factor of 3, which means that a point that would have been at the border of the canonical square in the original just-$P$ image would now be blown off screen. Imagine a tic-tac-toe board overlaid on the original image; with $QP$ replacing $P$, we're looking at the center square only. 
+
+    The $z_n$ value is scaled by 3, but as in the prior problem, this won't be an issue for the z-buffer because it does not change the relative z positions (does not flip any inequalities).
+
+    All together, replacing $P$ with $QP$ is equivalent to zooming in 3x aka scaling the x and y by 3.
+\end{minipage}
+}
+
+\item Ex. 12.3 from the book.
+In this  question, the modelview matrix, the projection matrix and
+the window size, do not change.
+Assume that the multiplication $QV$
+  only changes the viewport matrix. The window is still a fixed size
+  and spans the rectangle with lower left corner $(-0.5, -0.5)$ and
+  upper right $(w-0.5, h-0.5)$ in window space where $w, h$ are the
+  same as they were before the multiplication $QV$. The ``image'' is
+  just the contents of the window.  Don't worry about clipping issues.
+  Is this change different than from Question 4?  If you want, you
+  can draw me a sketch of an original picture, and how it changes in
+  Question 4, and how it changes in Question 5.
+
+\fbox{
+\begin{minipage}{6in}
+The viewport matrix:
+
+\[
+    \left[ \begin{array}{c}
+        x_w \\ y_w \\ z_w \\ 1
+    \end{array}\right]
+    =
+    \left[ \begin{array}{cccc} 
+        W/2 & 0 & 0 & (W-1)/2\\ 
+        0 & H/2 & 0 & (H-1)/2\\
+        0 & 0 & 1/2 & 1/2\\
+        0 & 0 & 0 & 1
+    \end{array}\right]
+    \left[\begin{array}{c}
+        x_n \\ y_n \\ z_n \\ 1
+    \end{array}\right]
+    =
+    \left[ \begin{array}{c}
+        x_n(W/2) + (W-1)/2 \\ y_n(H/2) + (H-1)/2 \\ 1/2 z_n \\ 1
+    \end{array}\right]
+\]
+
+QV =
+\left[ \begin{array}{cccc}
+      3 & 0 & 0 & 0 \\
+      0 & 3 & 0 & 0 \\
+      0 & 0 & 1 & 0 \\
+      0 & 0 & 0 & 1
+\end{array}\right]
+\left[ \begin{array}{cccc} 
+        W/2 & 0 & 0 & (W-1)/2\\ 
+        0 & H/2 & 0 & (H-1)/2\\
+        0 & 0 & 1/2 & 1/2\\
+        0 & 0 & 0 & 1
+\end{array}\right]
+=
+\left[ \begin{array}{cccc} 
+        3x_n(W/2) + 3(W-1)/2\\ 
+        3y_n (H/2) + 3(H-1)/2\\
+        1/2 z_n\\
+        1
+\end{array}\right]
+
+This we zoom in on the image by scaling x and y by a factor of three but only on the left corner since the (-0.5, -0.5) coordinates are hard coded. All the other coordinates are defined by w and h which depend on the window size and thus constantly change.
+
+\end{minipage}
+}
+ 
+
+\item{}
+  Suppose we have square texture of 512 pixels by 512 pixels.
+Consider the ``query point'' in the texture with
+coordinates $[0.45, 0.63]^t$. These coordinates are
+  represented in the  unit square domain with the lower left
+  corner being $[0, 0]^t$ and right corner being $[1,1]^t$. What is
+  the coordinates (again in the  unit square domain) of the
+  ``pixel center'' closest to this query point?
+
+\fbox{
+\begin{minipage}{6in}
+\[
+    \left[ \begin{array}{c}
+        x_w \\ y_w \\ - \\ 1
+    \end{array}\right]
+    =
+    \left[ \begin{array}{cccc} 
+        512 & 0 & 0 & -\frac{1}{2}\\ 
+        0 & 512 & 0 & -\frac{1}{2}\\
+        - & - & - & -\\
+        0 & 0 & 0 & 1
+    \end{array}\right]
+    \left[\begin{array}{c}
+        0.45 \\ 0.63 \\ - \\ 1
+    \end{array}\right]
+\]
+
+\[
+    \left[ \begin{array}{c}
+        x_w \\ y_w \\ - \\ 1
+    \end{array}\right]
+    =
+    \left[\begin{array}{c}
+        229.9 \\ 322.06 \\ - \\ 1
+    \end{array}\right]
+\]
+
+We need to round to the nearest pixel and also add back the half pixel off-set. Thus, we get:
+
+\[
+    \left[ \begin{array}{cccc} 
+        512 & 0 & 0 & -\frac{1}{2}\\ 
+        0 & 512 & 0 & -\frac{1}{2}\\
+        - & - & - & -\\
+        0 & 0 & 0 & 1
+    \end{array}\right]
+    \left[ \begin{array}{c}
+        x_t \\ y_t \\ - \\ 1
+    \end{array}\right]
+    =
+    \left[\begin{array}{c}
+        230.5 \\ 322.5 \\ - \\ 1
+    \end{array}\right]
+\]
+
+Now to get the coordinates in terms of unit square, we can divide $x_w, y_w$ by 512 to get: $[0.450195, 0.629883]^t$.
+\end{minipage}
+}
+
+\item{}
+  We have learned how openGL evaluates
+  functions that are affine with
+  respect to the eye coordinates (or equivalently: object coordinates or clip
+  coordinates) over a triangle. In fact, whenever you declare a varying
+  variable in OpenGL shaders, that process is performed automatically
+  for you.
+
+  Now suppose $f$ is some function that is 
+ affine w.r.t normalized device
+  coordinates (NDCs), (and hence also screen space coordinates, but not
+  eye coordinates), i.e.,
+$$
+f = \left[\begin{array}{ccc} a & b & c \end{array}\right] \left[\begin{array}{c}
+x_n\\
+y_n\\
+1
+\end{array}\right]
+$$
+
+Suppose you know the values of $f$ at the vertices of a triangle
+(in the vertex shader)
+and want access to the value of $f$ at a fragment (in the fragment shader).
+How would you implement this  in OpenGL?
+If you just set $f$ to be a varying variable, OpenGL will not give us
+the result we want. You should do this by defining and using
+some set of new varying variables.
+What varying variables would you use? Remember that any
+OpenGL varying variable $v$
+will be affinely interpolated with respect to eye coordinates.
+
+[{\bf Hints}]: You should find some ``cousin'' functions,
+that are affine wrt eye coordinate can be used to obtain $f$.
+Use these functions as the varying variables.
+Then do some 
+calculation in the fragment shader to compute $f$ from these variables.
+
+Recall the relationship between NDC and eye coordinates is
+$$
+\left[\begin{array}{c}
+    x_n w_n \\
+    y_n w_n\\
+    w_n \\
+\end{array}\right] = P' \left[\begin{array}{c}
+    x_e \\
+    y_e \\
+    z_e \\
+    1
+\end{array}\right]
+$$
+where $P'$ is the projection matrix with the third row removed. Note
+that for simplicity we are omitting the z component of the NDC here.
+
+It also may be useful to recall that
+the constant $1$ function is affine w.r.t. NDCs:
+$$
+1 = \left[\begin{array}{ccc} d & e & g \end{array}\right] \left[\begin{array}{c}
+x_n\\
+y_n\\
+1
+\end{array}\right]
+$$
+
+\fbox{
+\begin{minipage}{6in}
+We know that $f$ is affine to the normalized device coordinates. If we were to make $f$ a varying variable, then OpenGL would use rational linear interpolation and calculate $f/w_n$ and $1/w_n$ at each vertex, then interpolate that, but that's not what we want.
+
+In order to counteract this, we will define varying variables $f' = f w_n$ an $w' = w_n$. We can show using the constant 1 function that $f'$ and $w'$ are affine w.r.t. eye coordinates:
+
+\[
+\left[ \begin{array}{c} f \\ 1 \end{array}\right]
+=
+\left[ \begin{array}{ccc}
+a & b & c \\
+0 & 0 & 1
+\end{array}\right]
+\left[ \begin{array}{c} x_n \\ y_n \\ 1 \end{array} \right]
+\]
+Multiply both sides by $w_n$ and then substitute with the relationship between NDC and eye coordinates:
+\[
+\left[ \begin{array}{c} f w_n \\ w_n \end{array}\right]
+=
+\left[ \begin{array}{ccc}
+a & b & c \\
+0 & 0 & 1
+\end{array}\right]
+\left[ \begin{array}{c} x_n w_n \\ y_n w_n \\ w_n \end{array} \right]
+=
+\left[ \begin{array}{ccc}
+a & b & c \\
+0 & 0 & 1
+\end{array}\right]
+P'
+\left[ \begin{array}{c} x_e \\ y_e \\ z_e \\ 1 \end{array} \right]
+=
+\left[ \begin{array}{cccc}
+d & e & g & h \\
+i & j & k & l
+\end{array}\right]
+\left[ \begin{array}{c} x_e \\ y_e \\ z_e \\ 1 \end{array} \right]
+\]
+Since we can convert between $\left[fw_n, w_n\right]^t$ (aka $f'$ and $w_n$) and eye coordinates with only matrix multiplication, these are both affine w.r.t. eye coordinates.
+
+Since OpenGL will internally use rational linear interpolation affinely with respect to eye coordinates, $f'$ and $w'$ will be correctly interpolated at all of the fragments. 
+
+In the fragment shader, when we want to get access to the original value of $f$, we can simply divide $f'$ by $w'$. By definition, since $f' = f w_n$ and $w' = w_n$, dividing them gives $f' / w' = \frac{f w_n}{w_n} = f$. Thus we can use this value of $f$ that is correctly affine to normalized device coordinates in the fragment shader.
+
+\end{minipage}
+}
+\end{enumerate}
+\end{document}
